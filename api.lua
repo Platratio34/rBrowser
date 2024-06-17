@@ -36,7 +36,7 @@ function api.setPageElement(page)
     api.pageElement = page
 end
 
-function api.setPath(path)
+function api.setPath(path, secure)
     api.addToHistory()
     if not path:start('/') then
         path = '/' .. path
@@ -44,8 +44,21 @@ function api.setPath(path)
     api.url.path = path
     if api.urlBarElement then
         api.urlBarElement:setText(api.getUrl(true))
+        api.setSecure(secure)
     end
     api.refresh()
+end
+
+function api.setSecure(secure)
+    if not api.urlBarElement then
+        return
+    end
+
+    if secure then
+        api.urlBarElement.fg = colors.yellow
+    else
+        api.urlBarElement.fg = colors.white
+    end
 end
 
 function api.appendPath(path)
@@ -164,6 +177,11 @@ function api.refresh()
         -- return
     end
 
+    if rt.header.certificate then
+        api.setSecure(true)
+    else
+        api.setSecure(false)
+    end
     if rt.header.contentType == 'text/plain' then
         local text = pos.gui.TextBox(1, 1, nil, nil, rt.body)
         api.pageElement:addElement(text)
