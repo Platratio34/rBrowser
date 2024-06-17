@@ -125,6 +125,7 @@ function api.refresh()
     
     if api.urlBarElement then
         api.urlBarElement:setText(api.getUrl(true))
+        api.setSecure(false)
     end
     if api.refreshButton then
         api.refreshButton.text = 'O'
