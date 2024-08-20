@@ -172,7 +172,7 @@ function api.refresh()
         return
     end
     if rt.header.code ~= rttp.responseCodes.okay then
-        api.log:warn('Recived response ' .. rttp.codeName(rt.header.code))
+        api.log:warn('Received response ' .. rttp.codeName(rt.header.code))
         -- local text = pos.gui.TextBox(1, 1, nil, colors.red, 'Error: ' .. rt.body)
         -- api.pageElement:addElement(text)
         -- return
@@ -184,7 +184,7 @@ function api.refresh()
         api.setSecure(false)
     end
     if rt.header.contentType == 'text/plain' then
-        local text = pos.gui.TextBox(1, 1, nil, nil, rt.body)
+        local text = pos.gui.TextBox(1, 1, nil, nil, rt.body--[[@as string]])
         api.pageElement:addElement(text)
         return
     elseif rt.header.contentType == 'table/rtml' then
@@ -193,46 +193,46 @@ function api.refresh()
         pageElements = {}
         formElements = {}
         for i = 1, #rt.body do
-            local rEl = rt.body[i] ---@type RTMLElement
-            local gEl = nil
-            local color = rEl.color
+            local rtmlEl = rt.body[i] ---@type RTMLElement
+            local guiEl = nil
+            local color = rtmlEl.color
             if type(color) == 'string' then
                 color = colors[color]
             end
-            local bgColor = rEl.bgColor
+            local bgColor = rtmlEl.bgColor
             if type(bgColor) == 'string' then
                 bgColor = colors[bgColor]
             end
-            if rEl.type == "TEXT" then
-                gEl = pos.gui.TextBox(rEl.x, rEl.y, bgColor or colors.black, color or colors.white, rEl.text)
-            elseif rEl.type == "LINK" then
-                gEl = pos.gui.Button(rEl.x, rEl.y, string.len(rEl.text), 1, bgColor or colors.gray, color or colors.lightBlue, rEl.text,
+            if rtmlEl.type == "TEXT" then
+                guiEl = pos.gui.TextBox(rtmlEl.x, rtmlEl.y, bgColor or colors.black, color or colors.white, rtmlEl.text)
+            elseif rtmlEl.type == "LINK" then
+                guiEl = pos.gui.Button(rtmlEl.x, rtmlEl.y, string.len(rtmlEl.text), 1, bgColor or colors.gray, color or colors.lightBlue, rtmlEl.text,
                     function()
-                        api.appendPath(rEl.href)
+                        api.appendPath(rtmlEl.href)
                     end)
-            elseif rEl.type == "DOM-LINK" then
-                gEl = pos.gui.Button(rEl.x, rEl.y, string.len(rEl.text), 1, bgColor or colors.gray, color or colors.lightBlue, rEl.text,
+            elseif rtmlEl.type == "DOM-LINK" then
+                guiEl = pos.gui.Button(rtmlEl.x, rtmlEl.y, string.len(rtmlEl.text), 1, bgColor or colors.gray, color or colors.lightBlue, rtmlEl.text,
                     function()
-                        api.setUrl(rEl.href)
+                        api.setUrl(rtmlEl.href)
                     end)
-            elseif rEl.type == 'INPUT' then
-                gEl = pos.gui.TextInput(rEl.x, rEl.y, rEl.len, bgColor or colors.gray, color or colors.white, function(text) end)
-                gEl.name = rEl.name
-                if rEl.hide then
-                    gEl.hideText = true
+            elseif rtmlEl.type == 'INPUT' then
+                guiEl = pos.gui.TextInput(rtmlEl.x, rtmlEl.y, rtmlEl.len, bgColor or colors.gray, color or colors.white, function(text) end)
+                guiEl.name = rtmlEl.name
+                if rtmlEl.hide then
+                    guiEl.hideText = true
                 end
-                if rEl.next then
-                    table.insert(nEls, { fE = gEl, next = rEl.next })
+                if rtmlEl.next then
+                    table.insert(nEls, { fE = guiEl, next = rtmlEl.next })
                 end
-                if lInp then lInp.next = gEl end
-                lInp = gEl
-                formElements[rEl.name] = gEl
-            elseif rEl.type == 'BUTTON' then
-                gEl = pos.gui.Button(rEl.x, rEl.y, string.len(rEl.text), 1, bgColor or colors.green, color or colors.white, rEl.text,
+                if lInp then lInp.next = guiEl end
+                lInp = guiEl
+                formElements[rtmlEl.name] = guiEl
+            elseif rtmlEl.type == 'BUTTON' then
+                guiEl = pos.gui.Button(rtmlEl.x, rtmlEl.y, string.len(rtmlEl.text), 1, bgColor or colors.green, color or colors.white, rtmlEl.text,
                     function()
                         local msg
                         local path = api.url.path
-                        if rEl.action == 'SUBMIT' then
+                        if rtmlEl.action == 'SUBMIT' then
                             local rsp = {
                                 vals = {},
                                 type = "BUTTON_SUBMIT",
@@ -242,16 +242,16 @@ function api.refresh()
                             end
 
                             msg = rttp.postSync(dest, path, 'object/lua', rsp, api._cookies[dest])
-                        elseif rEl.action == 'PUSH' then
+                        elseif rtmlEl.action == 'PUSH' then
                             local rsp = {
                                 type = "BUTTON_PUSH",
-                                id = rEl.id,
+                                id = rtmlEl.id,
                             }
-                            path = '/' .. fs.combine(path, rEl.href)
+                            path = '/' .. fs.combine(path, rtmlEl.href)
 
                             msg = rttp.postSync(dest, path, 'object/lua', rsp, api._cookies[dest])
                         else
-                            api.log:warn('Unknown button action: ' .. rEl.action)
+                            api.log:warn('Unknown button action: ' .. rtmlEl.action)
                             return
                         end
                         
@@ -286,11 +286,11 @@ function api.refresh()
                         end
                     end)
             end
-            if gEl then
-                if rEl.id then
-                    pageElements[rEl.id] = gEl
+            if guiEl then
+                if rtmlEl.id then
+                    pageElements[rtmlEl.id] = guiEl
                 end
-                api.pageElement:addElement(gEl)
+                api.pageElement:addElement(guiEl)
             end
         end
         for _, t in pairs(nEls) do
@@ -298,7 +298,7 @@ function api.refresh()
                 if formElements[t.next] then
                     t.fE.next = formElements[t.next]
                 else
-                    api.log:warn('Form element '..t.fE.name..' indecated element "'..t.next..'" as next, but it does not exist')
+                    api.log:warn('Form element '..t.fE.name..' indicated element "'..t.next..'" as next, but it does not exist')
                 end
             end
         end
@@ -330,14 +330,14 @@ function api.loadBookmarks()
             return
         end
 
-        local bkms = textutils.unserialise(f.readAll())
+        local bookmarksLUA = textutils.unserialise(f.readAll())
         f.close()
-        if not bkms then
+        if not bookmarksLUA then
             api.log:error('Bookmark file corrupted')
             return
         end
         api.bookmarks = {}
-        for _,bkm in pairs(bkms) do
+        for _,bkm in pairs(bookmarksLUA) do
             api.bookmarks[bkm.href] = bkm.name
         end
         api.saveBookmarks()
@@ -349,13 +349,13 @@ function api.loadBookmarks()
         api.log:error('Could not open bookmark file')
         return
     end
-    local bkms = textutils.unserialiseJSON(f.readAll())
+    local bookmarks = textutils.unserialiseJSON(f.readAll())
     f.close()
-    if not bkms then
+    if not bookmarks then
         api.log:error('Bookmark file corrupted')
         return
     end
-    api.bookmarks = bkms
+    api.bookmarks = bookmarks
 end
 
 function api.saveBookmarks()
