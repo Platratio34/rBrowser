@@ -163,7 +163,11 @@ function api.refresh()
         end
         for name, cookie in pairs(rt.header.cookies) do
             -- api.log:debug('Storing cookie "' .. name .. '": "' .. cookie .. '"')
-            api._cookies[dest][name] = cookie
+            if cookie == '' then
+                api._cookies[dest][name] = nil
+            else
+                api._cookies[dest][name] = cookie
+            end
         end
     end
     
