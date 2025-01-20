@@ -14,7 +14,7 @@ local api = {
     bookmarkWindow = nil, ---@type Window
     bookmarkWindowInput = nil, ---@type TextInput
     refreshButton = nil, ---@type Button
-    _cookies = {}, ---@type {str: str}
+    _cookies = {}, ---@type { [string]: string }
 }
 
 function api.addToHistory()
